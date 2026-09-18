@@ -49,6 +49,11 @@ class AttendanceSerializer(serializers.ModelSerializer):
         source="employee.name",
         read_only=True,
     )
+    
+    department_name = serializers.CharField(
+        source = "employee.department.name",
+        read_only = True,
+    )
 
     class Meta:
         model = Attendance
@@ -56,6 +61,7 @@ class AttendanceSerializer(serializers.ModelSerializer):
             "id",
             "uid",
             "employee_name",
+            "department_name"
             "employee",
             "date",
             "check_in",
@@ -67,6 +73,7 @@ class AttendanceSerializer(serializers.ModelSerializer):
             "id",
             "uid",
             "employee_name",
+            "department_name",
             "created_at",
             "updated_at",
         ]
@@ -78,3 +85,6 @@ class UIDAttendanceSerializer(serializers.Serializer):
         trim_whitespace=True,
         help_text="Unique employee UID, for example EMP001.",
     )
+    
+    def validate_uid(self, value):
+        return value.strip().upper()

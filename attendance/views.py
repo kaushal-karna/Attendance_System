@@ -33,9 +33,25 @@ class EmployeeViewSet(viewsets.ModelViewSet):
 
 
 class AttendanceViewSet(viewsets.ModelViewSet):
-    queryset = Attendance.objects.select_related("employee").all()
+    queryset = Attendance.objects.select_related(
+        "employee",
+        "employee_department"
+        ).all()
+    
     serializer_class = AttendanceSerializer
     permission_classes = [AllowAny]
+    
+    def get_queryset(self):
+        queryset= super().get_queryset()
+    
+        date = self.request.query_params.get("date")
+
+        if date:
+            queryset = queryset.filter(date=date)
+            
+        return queryset
+
+        
 
     @extend_schema(
         request=UIDAttendanceSerializer,
