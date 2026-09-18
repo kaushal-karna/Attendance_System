@@ -13,7 +13,7 @@ The project is being developed using **Django and Django REST Framework**, with 
 * Attendance date tracking
 * Attendance status management
 * RESTful API using Django REST Framework
-* Token-based API authentication
+<!-- * Token-based API authentication -->
 * Session authentication
 * API documentation with Swagger/OpenAPI
 * PostgreSQL database integration
@@ -178,7 +178,7 @@ The project uses **Django REST Framework** to provide API endpoints for applicat
 Authentication supports:
 
 * Session Authentication
-* Token Authentication
+<!-- * Token Authentication -->
 
 API endpoints can be accessed through the configured application routes.
 
