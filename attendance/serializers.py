@@ -61,7 +61,7 @@ class AttendanceSerializer(serializers.ModelSerializer):
             "id",
             "uid",
             "employee_name",
-            "department_name"
+            "department_name",
             "employee",
             "date",
             "check_in",
