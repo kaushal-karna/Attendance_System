@@ -1,37 +1,82 @@
 # Attendance Management System
 
-A Django-based **Attendance Management System** for managing employees, departments, attendance records, check-in/check-out times, and related workforce information.
+A full-stack **Attendance Management System** for managing employees, departments, attendance records, check-in/check-out times, monthly reports, and workforce information.
 
-The project is being developed using **Django and Django REST Framework**, with PostgreSQL as the database.
+The project consists of a **Django + Django REST Framework backend** and a **React + Vite frontend**, with PostgreSQL support for production database usage.
+
+---
 
 ## 🚀 Features
 
-* Employee management
-* Department management
-* Employee attendance tracking
-* Check-in and check-out functionality
+### Employee Management
+
+* Create, view, update, and delete employees
+* Employee UID management
+* Employee department assignment
+* Employee information management
+
+### Department Management
+
+* Create and manage departments
+* Assign employees to departments
+* Department-based employee organization
+
+### Attendance Management
+
+* Employee check-in
+* Employee check-out
 * Attendance date tracking
+* Check-in and check-out time tracking
 * Attendance status management
+* Attendance history
+
+### Reports
+
+* Monthly attendance reports
+* Employee attendance summaries
+* First check-in and last check-out information
+* Attendance statistics
+
+### Backend
+
 * RESTful API using Django REST Framework
-<!-- * Token-based API authentication -->
 * Session authentication
-* API documentation with Swagger/OpenAPI
-* PostgreSQL database integration
+* Swagger/OpenAPI documentation
+* PostgreSQL database support
 * CORS support
-* Environment variables using `.env`
+* Environment variable configuration
+
+### Frontend
+
+* React 19
+* Vite development server
+* Employee management interface
+* Department management interface
+* Attendance interface
+* Dashboard
+* Monthly reports
+* Responsive component-based UI
+
+---
 
 ## 🛠️ Tech Stack
 
-| Technology            | Usage                 |
-| --------------------- | --------------------- |
-| Python                | Programming language  |
-| Django                | Web framework         |
-| Django REST Framework | REST API              |
-| PostgreSQL            | Database              |
-| DRF Spectacular       | API documentation     |
-| django-cors-headers   | CORS support          |
-| python-dotenv         | Environment variables |
-| Git & GitHub          | Version control       |
+| Technology            | Usage                                      |
+| --------------------- | ------------------------------------------ |
+| Python                | Backend programming language               |
+| Django                | Backend web framework                      |
+| Django REST Framework | REST API                                   |
+| PostgreSQL            | Production database                        |
+| SQLite                | Local development database                 |
+| DRF Spectacular       | OpenAPI / Swagger documentation            |
+| django-cors-headers   | Cross-Origin Resource Sharing              |
+| python-dotenv         | Environment configuration                  |
+| React                 | Frontend library                           |
+| Vite                  | Frontend build tool and development server |
+| JavaScript            | Frontend programming                       |
+| Git & GitHub          | Version control                            |
+
+---
 
 ## 📁 Project Structure
 
@@ -53,6 +98,24 @@ Attendance_System/
 │   ├── asgi.py
 │   └── wsgi.py
 │
+├── frontend/
+│   ├── public/
+│   ├── src/
+│   │   ├── assets/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── services/
+│   │   ├── utils/
+│   │   ├── App.jsx
+│   │   ├── App.css
+│   │   ├── index.css
+│   │   └── main.jsx
+│   ├── eslint.config.js
+│   ├── index.html
+│   ├── package.json
+│   ├── package-lock.json
+│   └── vite.config.js
+│
 ├── .env
 ├── .gitignore
 ├── manage.py
@@ -60,18 +123,24 @@ Attendance_System/
 └── README.md
 ```
 
-## ⚙️ Installation
+---
 
-### 1. Clone the repository
+# ⚙️ Installation
+
+## 1. Clone the repository
 
 ```bash
 git clone https://github.com/kaushal-karna/Attendance_System.git
 cd Attendance_System
 ```
 
-### 2. Create a virtual environment
+---
 
-Windows:
+# 🐍 Backend Setup
+
+## 2. Create a Python virtual environment
+
+### Windows
 
 ```powershell
 python -m venv venv
@@ -83,22 +152,28 @@ Activate it:
 venv\Scripts\activate
 ```
 
-Linux/macOS:
+### Linux/macOS
 
 ```bash
-python -m venv venv
+python3 -m venv venv
 source venv/bin/activate
 ```
 
-### 3. Install dependencies
+---
+
+## 3. Install Python dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## 🔐 Environment Variables
+---
+
+# 🔐 Environment Variables
 
 Create a `.env` file in the project root.
+
+Example:
 
 ```env
 SECRET_KEY=your-secret-key
@@ -112,19 +187,13 @@ DB_PORT=5432
 
 > **Important:** Never commit your `.env` file to GitHub.
 
-Make sure `.env` is included in `.gitignore`:
+Make sure `.env` is included in `.gitignore`.
 
-```gitignore
-.env
-venv/
-.venv/
-__pycache__/
-*.pyc
-```
+---
 
-## 🗄️ Database Setup
+# 🗄️ Database Setup
 
-Make sure PostgreSQL is installed and running.
+For PostgreSQL development/production usage, make sure PostgreSQL is installed and running.
 
 Create the database:
 
@@ -139,70 +208,191 @@ python manage.py makemigrations
 python manage.py migrate
 ```
 
-## 👤 Create Superuser
+For local development, the project can also use SQLite depending on the configured Django settings.
 
-Create an admin account:
+---
+
+# 👤 Create Superuser
+
+Create a Django admin account:
 
 ```powershell
 python manage.py createsuperuser
 ```
 
-Follow the prompts to set the username, email, and password.
+Follow the prompts to configure the username, email, and password.
 
-## ▶️ Run the Development Server
+---
+
+# ⚛️ Frontend Setup
+
+The React frontend is located inside:
+
+```text
+frontend/
+```
+
+Move into the frontend directory:
+
+```powershell
+cd frontend
+```
+
+Install JavaScript dependencies:
+
+```powershell
+npm install
+```
+
+The dependencies are defined in:
+
+```text
+frontend/package.json
+```
+
+and locked through:
+
+```text
+frontend/package-lock.json
+```
+
+> `node_modules/` is intentionally not committed to GitHub.
+
+---
+
+# ▶️ Running the Application
+
+The project uses two development servers.
+
+## 1. Start Django Backend
+
+From the project root:
 
 ```powershell
 python manage.py runserver
 ```
 
-The application will be available at:
+Backend:
 
 ```text
 http://127.0.0.1:8000/
 ```
 
-## 🔑 Django Admin
+---
 
-Open:
+## 2. Start React Frontend
 
-```text
-http://127.0.0.1:8000/admin/
+Open another terminal and navigate to:
+
+```powershell
+cd frontend
 ```
 
-Log in using the superuser credentials.
+Start Vite:
 
-## 🔌 API
+```powershell
+npm run dev
+```
 
-The project uses **Django REST Framework** to provide API endpoints for application data.
+Frontend:
 
-Authentication supports:
+```text
+http://localhost:5173/
+```
+
+---
+
+## 🔄 Application Architecture
+
+```text
+                    Attendance Management System
+
+                              ┌──────────────┐
+                              │    React     │
+                              │   Frontend   │
+                              │   Vite       │
+                              └──────┬───────┘
+                                     │
+                                  REST API
+                                     │
+                                     ▼
+                              ┌──────────────┐
+                              │    Django    │
+                              │     REST     │
+                              │     API      │
+                              └──────┬───────┘
+                                     │
+                                     ▼
+                              ┌──────────────┐
+                              │ PostgreSQL / │
+                              │    SQLite    │
+                              └──────────────┘
+```
+
+The React frontend communicates with Django through REST API endpoints.
+
+Frontend API configuration:
+
+```text
+frontend/src/services/api.js
+```
+
+---
+
+# 🔌 API
+
+The backend uses **Django REST Framework** to provide API endpoints for employees, departments, attendance, and reports.
+
+Authentication currently supports:
 
 * Session Authentication
-<!-- * Token Authentication -->
 
-API endpoints can be accessed through the configured application routes.
+API routes are configured through the Django application URL configuration.
 
-## 📚 API Documentation
+---
+
+# 📚 API Documentation
 
 The project uses **drf-spectacular** for OpenAPI documentation.
 
-Swagger UI:
+### Swagger UI
 
 ```text
-/api/schema/swagger-ui/
+http://127.0.0.1:8000/api/schema/swagger-ui/
 ```
 
-OpenAPI schema:
+### OpenAPI Schema
 
 ```text
-/api/schema/
+http://127.0.0.1:8000/api/schema/
 ```
 
-## 🔄 Git Workflow
+---
+
+# 🌐 CORS
+
+Because the React development server and Django development server run on different ports, CORS is configured for frontend-to-backend API communication.
+
+Development frontend:
+
+```text
+http://localhost:5173
+```
+
+Django backend:
+
+```text
+http://127.0.0.1:8000
+```
+
+---
+
+# 🔄 Git Workflow
 
 After making changes:
 
 ```powershell
+git status
 git add .
 git commit -m "your commit message"
 git push
@@ -212,41 +402,62 @@ Example:
 
 ```powershell
 git add .
-git commit -m "feat: add employee attendance tracking"
+git commit -m "feat: integrate React frontend with Django backend"
 git push
 ```
 
-## 📌 Project Status
+---
+
+# 📌 Project Status
 
 🚧 **Currently in development**
 
-New attendance, employee, department, authentication, and API features are being added progressively.
+The project is being actively developed as a full-stack attendance management system.
 
-## 🎯 Future Improvements
+Current development includes:
 
-* Employee dashboard
+* Employee management
+* Department management
+* Attendance tracking
+* Check-in/check-out
 * Attendance reports
+* Django REST API
+* React frontend
+* Dashboard
 * Monthly attendance summaries
+
+---
+
+# 🎯 Future Improvements
+
+* RFID-based attendance
+* Advanced attendance analytics
 * Late check-in detection
 * Early check-out detection
 * Leave management
-* Attendance filtering
-* Export attendance reports
-* Role-based permissions
-* Improved API endpoints
-* Dashboard analytics
+* Role-based permissions <!-- * Export attendance reports -->
+* PDF report generation
+* Improved dashboard analytics
 * Automated attendance calculations
+* Production deployment
+* Improved authentication and authorization
 
-## 👨‍💻 Author
+---
+
+# 👨‍💻 Author
 
 **Kaushal Karn**
 
 BSc. CSIT Student | Backend Developer
 
-GitHub: https://github.com/kaushal-karna
+GitHub:
+https://github.com/kaushal-karna
 
-LinkedIn: https://www.linkedin.com/in/kaushal-karn/
+LinkedIn:
+https://www.linkedin.com/in/kaushal-karn/
 
-## 📄 License
+---
+
+# 📄 License
 
 This project is currently intended for learning and development purposes.
