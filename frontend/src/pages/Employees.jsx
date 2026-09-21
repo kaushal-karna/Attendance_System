@@ -1,5 +1,4 @@
 import { useState } from "react"
-
 import EmployeeForm from "../components/EmployeeForm"
 
 function Employees({
@@ -10,8 +9,7 @@ function Employees({
   onDelete,
 }) {
   const [showForm, setShowForm] = useState(false)
-  const [editingEmployee, setEditingEmployee] =
-    useState(null)
+  const [editingEmployee, setEditingEmployee] = useState(null)
 
   function handleAdd() {
     setEditingEmployee(null)
@@ -25,10 +23,7 @@ function Employees({
 
   async function handleSave(employeeData) {
     if (editingEmployee) {
-      await onUpdate(
-        editingEmployee.id,
-        employeeData
-      )
+      await onUpdate(editingEmployee.id, employeeData)
     } else {
       await onCreate(employeeData)
     }
@@ -38,9 +33,7 @@ function Employees({
   }
 
   async function handleDelete(employee) {
-    const confirmed = window.confirm(
-      `Delete ${employee.name}?`
-    )
+    const confirmed = window.confirm(`Delete ${employee.name}?`)
 
     if (!confirmed) {
       return
@@ -54,16 +47,10 @@ function Employees({
       <div className="page-header employee-header">
         <div>
           <h2>Employees</h2>
-
-          <p>
-            Manage employees in your organization.
-          </p>
+          <p>Manage employees in your organization.</p>
         </div>
 
-        <button
-          className="button primary"
-          onClick={handleAdd}
-        >
+        <button className="button primary" onClick={handleAdd}>
           + Add Employee
         </button>
       </div>
@@ -82,15 +69,12 @@ function Employees({
 
       <div className="table-container">
         {employees.length === 0 ? (
-          <p className="empty-message">
-            No employees found.
-          </p>
+          <p className="empty-message">No employees found.</p>
         ) : (
           <table>
             <thead>
               <tr>
-                <th>ID</th>
-                <th>UID</th>
+                <th>Employee ID</th>
                 <th>Name</th>
                 <th>Department</th>
                 <th>Status</th>
@@ -101,16 +85,9 @@ function Employees({
             <tbody>
               {employees.map((employee) => (
                 <tr key={employee.id}>
-                  <td>{employee.id}</td>
-
-                  <td>{employee.uid}</td>
-
+                  <td>{employee.employee_id || "-"}</td>
                   <td>{employee.name}</td>
-
-                  <td>
-                    {employee.department_name ||
-                      "-"}
-                  </td>
+                  <td>{employee.department_name || "-"}</td>
 
                   <td>
                     <span
@@ -120,9 +97,7 @@ function Employees({
                           : "status inactive"
                       }
                     >
-                      {employee.is_active
-                        ? "Active"
-                        : "Inactive"}
+                      {employee.is_active ? "Active" : "Inactive"}
                     </span>
                   </td>
 
@@ -130,18 +105,14 @@ function Employees({
                     <div className="action-buttons">
                       <button
                         className="button small"
-                        onClick={() =>
-                          handleEdit(employee)
-                        }
+                        onClick={() => handleEdit(employee)}
                       >
                         Edit
                       </button>
 
                       <button
                         className="button small danger"
-                        onClick={() =>
-                          handleDelete(employee)
-                        }
+                        onClick={() => handleDelete(employee)}
                       >
                         Delete
                       </button>

@@ -3,6 +3,7 @@ from calendar import monthrange
 from datetime import date, datetime
 from io import BytesIO
 
+from django.db import transaction
 from django.http import HttpResponse
 from django.utils import timezone
 
@@ -338,6 +339,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             monthly_summary.append(
                 {
                     "employee_name": employee.name,
+                    "employee_id": employee.employee_id,
                     "uid": employee.uid,
                     "department": employee.department.name,
                     "present_days": present_days,
@@ -432,6 +434,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                     "employee_name": (
                         attendance.employee.name
                     ),
+                    "employee_id": attendance.employee.employee_id,   
                     "uid": attendance.employee.uid,
                     "department": (
                         attendance.employee.department.name
@@ -951,3 +954,267 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             },
             status=status.HTTP_200_OK,
         )
+        
+        
+        
+        
+    # RFID automatic check-in / check-out
+    @extend_schema(
+        request=UIDAttendanceSerializer,
+        responses={
+            200: OpenApiResponse(
+                description="RFID attendance processed successfully."
+            ),
+            400: OpenApiResponse(
+                description="Attendance cannot be processed."
+            ),
+            404: OpenApiResponse(
+                description="Employee not found or inactive."
+            ),
+        },
+        summary="RFID Attendance Scan",
+        description=(
+            "Process an RFID scan using the employee's RFID UID. "
+            "The server automatically determines whether the scan "
+            "is a check-in or check-out."
+        ),
+        examples=[
+            OpenApiExample(
+                "RFID Scan",
+                value={
+                    "uid": "04A37B91"
+                },
+                request_only=True,
+            ),
+        ],
+        tags=["Attendance"],
+    )
+    @action(
+        detail=False,
+        methods=["post"],
+        url_path="rfid-scan",
+    )
+    def rfid_scan(self, request):
+        # --------------------------------------------------
+        # 1. Validate RFID UID
+        # --------------------------------------------------
+
+        serializer = UIDAttendanceSerializer(
+            data=request.data
+        )
+
+        serializer.is_valid(
+            raise_exception=True
+        )
+
+        uid = serializer.validated_data["uid"]
+
+        # --------------------------------------------------
+        # 2. Find active employee
+        # --------------------------------------------------
+
+        try:
+            employee = (
+                Employee.objects
+                .select_related("department")
+                .get(
+                    uid=uid,
+                    is_active=True,
+                )
+            )
+
+        except Employee.DoesNotExist:
+            return Response(
+                {
+                    "error": "Employee not found or inactive.",
+                    "uid": uid,
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # --------------------------------------------------
+        # 3. Get Nepal/local date and time
+        # --------------------------------------------------
+
+        now = timezone.localtime()
+
+        today = now.date()
+
+        current_time = now.time().replace(
+            microsecond=0
+        )
+
+        # --------------------------------------------------
+        # 4. Process attendance safely
+        # --------------------------------------------------
+
+        with transaction.atomic():
+
+            attendance, created = (
+                Attendance.objects
+                .select_for_update()
+                .get_or_create(
+                    employee=employee,
+                    date=today,
+                    defaults={
+                        "check_in": current_time,
+                    },
+                )
+            )
+
+            # --------------------------------------------------
+            # CASE 1:
+            # No attendance record existed
+            # → CHECK IN
+            # --------------------------------------------------
+
+            if created:
+
+                return Response(
+                    {
+                        "message": "Check-in successful.",
+                        "status": "IN",
+                        "uid": employee.uid,
+                        "employee_id": employee.employee_id,
+                        "employee_name": employee.name,
+                        "department": employee.department.name,
+                        "date": attendance.date,
+                        "check_in": attendance.check_in,
+                        "check_out": None,
+                    },
+                    status=status.HTTP_200_OK,
+                )
+
+            # --------------------------------------------------
+            # CASE 2:
+            # Record exists but no check-in
+            # → CHECK IN
+            # --------------------------------------------------
+
+            if attendance.check_in is None:
+
+                attendance.check_in = current_time
+
+                attendance.save(
+                    update_fields=[
+                        "check_in",
+                        "updated_at",
+                    ]
+                )
+
+                return Response(
+                    {
+                        "message": "Check-in successful.",
+                        "status": "IN",
+                        "uid": employee.uid,
+                        "employee_id": employee.employee_id,
+                        "employee_name": employee.name,
+                        "department": employee.department.name,
+                        "date": attendance.date,
+                        "check_in": attendance.check_in,
+                        "check_out": None,
+                    },
+                    status=status.HTTP_200_OK,
+                )
+
+            # --------------------------------------------------
+            # CASE 3:
+            # Check-in exists, check-out empty
+            # → CHECK OUT
+            # --------------------------------------------------
+
+            if attendance.check_out is None:
+
+                check_in_datetime = datetime.combine(
+                    attendance.date,
+                    attendance.check_in,
+                )
+
+                check_out_datetime = datetime.combine(
+                    attendance.date,
+                    current_time,
+                )
+
+                duration = (
+                    check_out_datetime
+                    - check_in_datetime
+                )
+
+                total_seconds = int(
+                    duration.total_seconds()
+                )
+
+                if total_seconds < 0:
+                    return Response(
+                        {
+                            "error": (
+                                "Check-out time cannot be "
+                                "before check-in time."
+                            ),
+                            "uid": employee.uid,
+                            "employee_id": employee.employee_id,
+                            "check_in": attendance.check_in,
+                            "check_out": current_time,
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                hours = total_seconds // 3600
+
+                minutes = (
+                    total_seconds % 3600
+                ) // 60
+
+                seconds = (
+                    total_seconds % 60
+                )
+
+                working_hours = (
+                    f"{hours:02d}:"
+                    f"{minutes:02d}:"
+                    f"{seconds:02d}"
+                )
+
+                attendance.check_out = current_time
+
+                attendance.save(
+                    update_fields=[
+                        "check_out",
+                        "updated_at",
+                    ]
+                )
+
+                return Response(
+                    {
+                        "message": "Check-out successful.",
+                        "status": "OUT",
+                        "uid": employee.uid,
+                        "employee_id": employee.employee_id,
+                        "employee_name": employee.name,
+                        "department": employee.department.name,
+                        "date": attendance.date,
+                        "check_in": attendance.check_in,
+                        "check_out": attendance.check_out,
+                        "working_hours": working_hours,
+                    },
+                    status=status.HTTP_200_OK,
+                )
+
+            # --------------------------------------------------
+            # CASE 4:
+            # Already checked in and checked out
+            # → ERROR
+            # --------------------------------------------------
+
+            return Response(
+                {
+                    "error": "Employee has already checked out today.",
+                    "uid": employee.uid,
+                    "employee_id": employee.employee_id,
+                    "employee_name": employee.name,
+                    "date": attendance.date,
+                    "check_in": attendance.check_in,
+                    "check_out": attendance.check_out,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )

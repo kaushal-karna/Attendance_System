@@ -24,6 +24,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "uid",
+            "employee_id",
             "name",
             "department",
             "department_name",
@@ -44,6 +45,11 @@ class AttendanceSerializer(serializers.ModelSerializer):
         source="employee.uid",
         read_only=True,
     )
+    
+    employee_id = serializers.CharField(
+    source="employee.employee_id",
+    read_only=True,
+    )
 
     employee_name = serializers.CharField(
         source="employee.name",
@@ -60,6 +66,7 @@ class AttendanceSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "uid",
+            "employee_id",
             "employee_name",
             "department_name",
             "employee",
@@ -83,8 +90,12 @@ class UIDAttendanceSerializer(serializers.Serializer):
     uid = serializers.CharField(
         max_length=50,
         trim_whitespace=True,
-        help_text="Unique employee UID, for example EMP001.",
+        help_text="RFID card UID, for example 04A37B91.",
     )
     
     def validate_uid(self, value):
-        return value.strip().upper()
+        value = value.strip().upper()
+        value = value.replace(" ", "")
+        value = value.replace(":", "")
+        value = value.replace("-", "")        
+        return value
