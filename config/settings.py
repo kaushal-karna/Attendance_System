@@ -225,6 +225,7 @@ SPECTACULAR_SETTINGS = {
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
+    "https://attendance-system-six-ebon.vercel.app"
 ]
 
 # Add your deployed React URL here later:
