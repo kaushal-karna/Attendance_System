@@ -25,14 +25,14 @@ function Dashboard({
   ).length
 
   // Sort by updated_at (or date/check_in) so today's newest scans come first,
-  // and show only the top 3 records to keep the dashboard tidy.
-  const recentAttendance = [...attendance]
-    .sort((a, b) => {
-      const timeB = b.updated_at || `${b.date}T${b.check_in || "00:00:00"}`
-      const timeA = a.updated_at || `${a.date}T${a.check_in || "00:00:00"}`
-      return String(timeB).localeCompare(String(timeA))
-    })
-    .slice(0, 3)
+  // and show the records of the employee today one
+  const recentAttendance = attendance
+  .filter(record => record.date === today)
+  .sort((a, b) => {
+    const timeB = b.updated_at || `${b.date}T${b.check_in || "00:00:00"}`
+    const timeA = a.updated_at || `${a.date}T${a.check_in || "00:00:00"}`
+    return String(timeB).localeCompare(String(timeA))
+  })
 
   return (
     <div className="page">
