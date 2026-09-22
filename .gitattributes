@@ -1,0 +1,10 @@
+* text=auto
+*.py text
+*.js text
+*.jsx text
+*.css text
+*.html text
+*.json text
+*.md text
+*.txt text
+*.sh text eol=lf

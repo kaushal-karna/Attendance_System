@@ -28,11 +28,13 @@ function Dashboard({
   // and show the records of the employee today one
   const recentAttendance = attendance
   .filter(record => record.date === today)
-  .sort((a, b) => {
-    const timeB = b.updated_at || `${b.date}T${b.check_in || "00:00:00"}`
-    const timeA = a.updated_at || `${a.date}T${a.check_in || "00:00:00"}`
-    return String(timeB).localeCompare(String(timeA))
-  })
+  .sort((a, b) =>
+    String(a.employee_id).localeCompare(
+      String(b.employee_id),
+      undefined,
+      { numeric: true }
+    )
+  )
 
   return (
     <div className="page">

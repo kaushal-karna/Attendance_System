@@ -6,6 +6,7 @@ from io import BytesIO
 from django.db import transaction
 from django.http import HttpResponse
 from django.utils import timezone
+from datetime import datetime, date, timedelta
 
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -98,6 +99,24 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 ),
             ],
         ),
+        
+        OpenApiParameter(
+            name="employee_id",
+            type=str,
+            location=OpenApiParameter.QUERY,
+            required=False,
+            description=(
+                "Optional employee UID. "
+                "When provided, the report is generated "
+                "for only that employee."
+            ),
+            examples=[
+                OpenApiExample(
+                    "Employee EMP004",
+                    value="EMP004",
+                ),
+            ],
+        ),
     ],
 )
     @action(
@@ -116,6 +135,10 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             "report_format",
             "json",
         ).lower()
+        
+        employee_id = request.query_params.get(
+            "employee_id"
+            )
 
         # --------------------------------------------------
         # 2. Validate month
@@ -176,9 +199,19 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             month_date.month,
         )[1]
 
-        end_date = month_date.replace(
-            day=last_day,
-        )
+        month_end_date = month_date.replace(day=last_day)
+
+        today = date.today()
+
+        # If selected month is the current month,
+        # report only up to today.
+        if (
+            month_date.year == today.year
+            and month_date.month == today.month
+        ):
+            end_date = today
+        else:
+            end_date = month_end_date
 
         # ==================================================
         # MONTHLY SUMMARY
@@ -191,6 +224,20 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             .select_related("department")
             .order_by("name")
         )
+        
+        if employee_id:
+            employees = employees.filter(
+                employee_id=employee_id
+            )
+            
+        if not employees.exists():
+            return Response(
+                {
+                    "error": "Employee not found.",
+                    "employee_id": employee_id,
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
         for employee in employees:
 
@@ -367,95 +414,160 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 
         daily_details = []
 
-        attendance_records = (
-            Attendance.objects
-            .select_related(
-                "employee",
-                "employee__department",
+        # Only generate daily details for the selected employee
+        # when employee_id is provided.
+        daily_employees = employees
+
+        for employee in daily_employees:
+
+            # Get all attendance records for this employee
+            # within the report period.
+            attendance_records = (
+                Attendance.objects
+                .filter(
+                    employee=employee,
+                    date__range=[
+                        start_date,
+                        end_date,
+                    ],
+                )
+                .order_by(
+                    "date",
+                    "check_in",
+                )
             )
-            .filter(
-                date__range=[
-                    start_date,
-                    end_date,
-                ]
-            )
-            .order_by(
-                "date",
-                "employee__name",
-                "check_in",
-            )
-        )
 
-        for attendance in attendance_records:
+            # Create a lookup dictionary:
+            # date -> attendance record
+            attendance_by_date = {
+                attendance.date: attendance
+                for attendance in attendance_records
+            }
 
-            hours_worked = "0h 0m"
+            current_date = start_date
 
-            if (
-                attendance.check_in
-                and attendance.check_out
-            ):
-                check_in_datetime = datetime.combine(
-                attendance.date,
-                attendance.check_in,
-                )
-                
-                check_out_datetime = datetime.combine(
-                attendance.date,
-                attendance.check_out,
+            while current_date <= end_date:
+
+                attendance = attendance_by_date.get(
+                    current_date
                 )
 
-                duration = (
-                    check_out_datetime
-                    - check_in_datetime
-                )
+                # --------------------------------------------------
+                # Weekend
+                # --------------------------------------------------
+                if current_date.weekday() >= 5:
+                    status_display = "Weekend"
 
-                seconds = int(
-                    duration.total_seconds()
-                )
+                # --------------------------------------------------
+                # Present
+                # --------------------------------------------------
+                elif attendance and attendance.check_in:
+                    status_display = "Present"
 
-                if seconds > 0:
+                # --------------------------------------------------
+                # Absent
+                # --------------------------------------------------
+                else:
+                    status_display = "Absent"
 
-                    hours = seconds // 3600
+                # --------------------------------------------------
+                # Default values
+                # --------------------------------------------------
+                check_in_display = None
+                check_out_display = None
+                hours_worked = "0h 0m"
 
-                    minutes = (
-                        seconds % 3600
-                    ) // 60
+                # --------------------------------------------------
+                # Attendance exists
+                # --------------------------------------------------
+                if attendance:
 
-                    hours_worked = (
-                        f"{hours}h "
-                        f"{minutes}m"
-                    )
-
-            daily_details.append(
-                {
-                    "date": attendance.date.strftime(
-                        "%Y-%m-%d"
-                    ),
-                    "employee_name": (
-                        attendance.employee.name
-                    ),
-                    "employee_id": attendance.employee.employee_id,   
-                    "uid": attendance.employee.uid,
-                    "department": (
-                        attendance.employee.department.name
-                    ),
-                    "check_in": (
-                        attendance.check_in.strftime(
-                            "%H:%M:%S"
+                    if attendance.check_in:
+                        check_in_display = (
+                            attendance.check_in.strftime(
+                                "%H:%M:%S"
+                            )
                         )
-                        if attendance.check_in
-                        else None
-                    ),
-                    "check_out": (
-                        attendance.check_out.strftime(
-                            "%H:%M:%S"
+
+                    if attendance.check_out:
+                        check_out_display = (
+                            attendance.check_out.strftime(
+                                "%H:%M:%S"
+                            )
                         )
-                        if attendance.check_out
-                        else None
-                    ),
-                    "hours_worked": hours_worked,
-                }
-            )
+
+                    # --------------------------------------------------
+                    # Calculate hours worked
+                    # --------------------------------------------------
+                    if (
+                        attendance.check_in
+                        and attendance.check_out
+                    ):
+
+                        check_in_datetime = datetime.combine(
+                            attendance.date,
+                            attendance.check_in,
+                        )
+
+                        check_out_datetime = datetime.combine(
+                            attendance.date,
+                            attendance.check_out,
+                        )
+
+                        duration = (
+                            check_out_datetime
+                            - check_in_datetime
+                        )
+
+                        seconds = int(
+                            duration.total_seconds()
+                        )
+
+                        if seconds > 0:
+
+                            hours = seconds // 3600
+
+                            minutes = (
+                                seconds % 3600
+                            ) // 60
+
+                            hours_worked = (
+                                f"{hours}h "
+                                f"{minutes}m"
+                            )
+
+                # --------------------------------------------------
+                # Add daily row
+                # --------------------------------------------------
+                daily_details.append(
+                    {
+                        "date": current_date.strftime(
+                            "%Y-%m-%d"
+                        ),
+
+                        "day": current_date.strftime(
+                            "%A"
+                        ),
+
+                        "employee_name": employee.name,
+
+                        "employee_id": employee.employee_id,
+
+                        "uid": employee.uid,
+
+                        "department": employee.department.name,
+
+                        "check_in": check_in_display,
+
+                        "check_out": check_out_display,
+
+                        "hours_worked": hours_worked,
+
+                        "status": status_display,
+                    }
+                )
+
+                current_date += timedelta(days=1)
 
         # ==================================================
         # JSON RESPONSE
@@ -501,6 +613,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 
             writer.writerow(
                 [
+                    "Employee ID",
                     "Employee",
                     "UID",
                     "Department",
@@ -519,6 +632,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 
                 writer.writerow(
                     [
+                        row["employee_id"],
                         row["employee_name"],
                         row["uid"],
                         row["department"],
@@ -551,6 +665,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             writer.writerow(
                 [
                     "Date",
+                    "Employee ID",
                     "UID",
                     "Employee",
                     "Department",
@@ -565,6 +680,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 writer.writerow(
                     [
                         row["date"],
+                        row["employee_id"],
                         row["uid"],
                         row["employee_name"],
                         row["department"],
@@ -595,6 +711,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             summary_sheet.title = "Monthly Summary"
 
             summary_headers = [
+                "Employee ID",
                 "Employee",
                 "UID",
                 "Department",
@@ -616,6 +733,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 
                 summary_sheet.append(
                     [
+                        row["employee_id"],
                         row["employee_name"],
                         row["uid"],
                         row["department"],
@@ -640,6 +758,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 
             detail_headers = [
                 "Date",
+                "Employee ID",
                 "UID",
                 "Employee",
                 "Department",
@@ -657,6 +776,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 details_sheet.append(
                     [
                         row["date"],
+                        row["employee_id"],
                         row["uid"],
                         row["employee_name"],
                         row["department"],
