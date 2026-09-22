@@ -24,7 +24,7 @@ DEBUG = os.getenv("DEBUG", "True").lower() == "true"
 
 ALLOWED_HOSTS = os.getenv(
     "ALLOWED_HOSTS",
-    "127.0.0.1,localhost",
+    "127.0.0.1,localhost,attendance-system-api-wry1.onrender.com",
 ).split(",")
 
 # ============================================================
