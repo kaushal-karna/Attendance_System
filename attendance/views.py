@@ -222,7 +222,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         employees = (
             Employee.objects
             .select_related("department")
-            .order_by(employee_id)
+            .order_by("employee_id")
             # .order_by("name")
         )
         
