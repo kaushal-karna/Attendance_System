@@ -14,13 +14,19 @@ function Attendance({ attendance, onFilter }) {
 
   const today = new Date().toISOString().split("T")[0];
 
-  const todayAttendance = [...attendance]
-    .filter((record) => record.date === today)
-    .sort((a, b) =>
-      a.employee_id.localeCompare(b.employee_id, undefined, {
+const selectedDate = dateFilter || today;
+
+const filteredAttendance = [...attendance]
+  .filter((record) => record.date === selectedDate)
+  .sort((a, b) =>
+    (a.employee_id || "").localeCompare(
+      b.employee_id || "",
+      undefined,
+      {
         numeric: true,
-      }),
-    );
+      },
+    ),
+  );
 
   async function handleCheckIn() {
     if (!uid.trim()) {
@@ -205,14 +211,14 @@ function Attendance({ attendance, onFilter }) {
           </thead>
 
           <tbody>
-            {todayAttendance.length === 0 ? (
+            {filteredAttendance.length === 0 ? (
               <tr>
                 <td colSpan="8" className="empty-message">
                   No attendance records found for today.
                 </td>
               </tr>
             ) : (
-              todayAttendance.map((record) => (
+              filteredAttendance.map((record) => (
                 <tr key={record.id}>
                   <td>{record.date}</td>
                   <td>{record.employee_id}</td>
