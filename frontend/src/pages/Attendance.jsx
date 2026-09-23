@@ -1,4 +1,5 @@
 import { useState } from "react";
+
 import { formatTime } from "../utils/time";
 
 import { checkIn, checkOut } from "../services/api";
@@ -10,6 +11,16 @@ function Attendance({ attendance, onFilter }) {
   const [loading, setLoading] = useState(false);
   const [timeFormat, setTimeFormat] = useState("12h");
   const [dateFilter, setDateFilter] = useState("");
+
+  const today = new Date().toISOString().split("T")[0];
+
+  const todayAttendance = [...attendance]
+    .filter((record) => record.date === today)
+    .sort((a, b) =>
+      a.employee_id.localeCompare(b.employee_id, undefined, {
+        numeric: true,
+      }),
+    );
 
   async function handleCheckIn() {
     if (!uid.trim()) {
@@ -85,6 +96,7 @@ function Attendance({ attendance, onFilter }) {
 
   function handleDateFilterChange(event) {
     const value = event.target.value;
+
     setDateFilter(value);
 
     if (onFilter) {
@@ -138,8 +150,17 @@ function Attendance({ attendance, onFilter }) {
           </button>
         </div>
 
-        {message && <div className="attendance-success">{message}</div>}
-        {error && <div className="attendance-error">{error}</div>}
+        {message && (
+          <div className="attendance-success">
+            {message}
+          </div>
+        )}
+
+        {error && (
+          <div className="attendance-error">
+            {error}
+          </div>
+        )}
       </div>
 
       <div className="filter-bar">
@@ -184,37 +205,39 @@ function Attendance({ attendance, onFilter }) {
           </thead>
 
           <tbody>
-            {attendance.length === 0 ? (
+            {todayAttendance.length === 0 ? (
               <tr>
                 <td colSpan="8" className="empty-message">
-                  No attendance records found.
+                  No attendance records found for today.
                 </td>
               </tr>
             ) : (
-              [...attendance]
-                .sort((a, b) =>
-                  a.employee_id.localeCompare(b.employee_id, undefined, {
-                    numeric: true,
-                  }),
-                )
-                .map((record) => (
-                  <tr key={record.id}>
-                    <td>{record.date}</td>
-                    <td>{record.employee_id}</td>
-                    <td>{record.uid}</td>
-                    <td>{record.employee_name}</td>
-                    <td>{record.department_name || "-"}</td>
-                    <td>{formatTime(record.check_in, timeFormat)}</td>
-                    <td>{formatTime(record.check_out, timeFormat)}</td>
-                    <td>
-                      {record.check_out ? (
-                        <span className="status completed">Completed</span>
-                      ) : (
-                        <span className="status pending">Checked in</span>
-                      )}
-                    </td>
-                  </tr>
-                ))
+              todayAttendance.map((record) => (
+                <tr key={record.id}>
+                  <td>{record.date}</td>
+                  <td>{record.employee_id}</td>
+                  <td>{record.uid}</td>
+                  <td>{record.employee_name}</td>
+                  <td>{record.department_name || "-"}</td>
+                  <td>
+                    {formatTime(record.check_in, timeFormat)}
+                  </td>
+                  <td>
+                    {formatTime(record.check_out, timeFormat)}
+                  </td>
+                  <td>
+                    {record.check_out ? (
+                      <span className="status completed">
+                        Completed
+                      </span>
+                    ) : (
+                      <span className="status pending">
+                        Checked in
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              ))
             )}
           </tbody>
         </table>
