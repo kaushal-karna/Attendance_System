@@ -1,45 +1,39 @@
-import { useState } from "react"
-import EmployeeForm from "../components/EmployeeForm"
+import { useState } from "react";
+import EmployeeForm from "../components/EmployeeForm";
 
-function Employees({
-  employees,
-  departments,
-  onCreate,
-  onUpdate,
-  onDelete,
-}) {
-  const [showForm, setShowForm] = useState(false)
-  const [editingEmployee, setEditingEmployee] = useState(null)
+function Employees({ employees, departments, onCreate, onUpdate, onDelete }) {
+  const [showForm, setShowForm] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState(null);
 
   function handleAdd() {
-    setEditingEmployee(null)
-    setShowForm(true)
+    setEditingEmployee(null);
+    setShowForm(true);
   }
 
   function handleEdit(employee) {
-    setEditingEmployee(employee)
-    setShowForm(true)
+    setEditingEmployee(employee);
+    setShowForm(true);
   }
 
   async function handleSave(employeeData) {
     if (editingEmployee) {
-      await onUpdate(editingEmployee.id, employeeData)
+      await onUpdate(editingEmployee.id, employeeData);
     } else {
-      await onCreate(employeeData)
+      await onCreate(employeeData);
     }
 
-    setShowForm(false)
-    setEditingEmployee(null)
+    setShowForm(false);
+    setEditingEmployee(null);
   }
 
   async function handleDelete(employee) {
-    const confirmed = window.confirm(`Delete ${employee.name}?`)
+    const confirmed = window.confirm(`Delete ${employee.name}?`);
 
     if (!confirmed) {
-      return
+      return;
     }
 
-    await onDelete(employee.id)
+    await onDelete(employee.id);
   }
 
   return (
@@ -61,8 +55,8 @@ function Employees({
           departments={departments}
           onSave={handleSave}
           onCancel={() => {
-            setShowForm(false)
-            setEditingEmployee(null)
+            setShowForm(false);
+            setEditingEmployee(null);
           }}
         />
       )}
@@ -83,49 +77,55 @@ function Employees({
             </thead>
 
             <tbody>
-              {employees.map((employee) => (
-                <tr key={employee.id}>
-                  <td>{employee.employee_id || "-"}</td>
-                  <td>{employee.name}</td>
-                  <td>{employee.department_name || "-"}</td>
+              {[...employees]
+                .sort((a, b) =>
+                  a.employee_id.localeCompare(b.employee_id, undefined, {
+                    numeric: true,
+                  }),
+                )
+                .map((employee) => (
+                  <tr key={employee.id}>
+                    <td>{employee.employee_id || "-"}</td>
+                    <td>{employee.name}</td>
+                    <td>{employee.department_name || "-"}</td>
 
-                  <td>
-                    <span
-                      className={
-                        employee.is_active
-                          ? "status active"
-                          : "status inactive"
-                      }
-                    >
-                      {employee.is_active ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-
-                  <td>
-                    <div className="action-buttons">
-                      <button
-                        className="button small"
-                        onClick={() => handleEdit(employee)}
+                    <td>
+                      <span
+                        className={
+                          employee.is_active
+                            ? "status active"
+                            : "status inactive"
+                        }
                       >
-                        Edit
-                      </button>
+                        {employee.is_active ? "Active" : "Inactive"}
+                      </span>
+                    </td>
 
-                      <button
-                        className="button small danger"
-                        onClick={() => handleDelete(employee)}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    <td>
+                      <div className="action-buttons">
+                        <button
+                          className="button small"
+                          onClick={() => handleEdit(employee)}
+                        >
+                          Edit
+                        </button>
+
+                        <button
+                          className="button small danger"
+                          onClick={() => handleDelete(employee)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         )}
       </div>
     </div>
-  )
+  );
 }
 
-export default Employees
+export default Employees;

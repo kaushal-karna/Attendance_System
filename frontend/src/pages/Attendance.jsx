@@ -1,94 +1,94 @@
-import { useState } from "react"
-import { formatTime } from "../utils/time"
+import { useState } from "react";
+import { formatTime } from "../utils/time";
 
-import { checkIn, checkOut } from "../services/api"
+import { checkIn, checkOut } from "../services/api";
 
 function Attendance({ attendance, onFilter }) {
-  const [uid, setUid] = useState("")
-  const [message, setMessage] = useState("")
-  const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [timeFormat, setTimeFormat] = useState("12h")
-  const [dateFilter, setDateFilter] = useState("")
+  const [uid, setUid] = useState("");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [timeFormat, setTimeFormat] = useState("12h");
+  const [dateFilter, setDateFilter] = useState("");
 
   async function handleCheckIn() {
     if (!uid.trim()) {
-      setError("Please enter an employee UID.")
-      setMessage("")
-      return
+      setError("Please enter an employee UID.");
+      setMessage("");
+      return;
     }
 
-    setLoading(true)
-    setError("")
-    setMessage("")
+    setLoading(true);
+    setError("");
+    setMessage("");
 
     try {
-      const data = await checkIn(uid)
+      const data = await checkIn(uid);
 
       setMessage(
         `${data.employee_name} checked in successfully at ${formatTime(
           data.check_in,
-          timeFormat
-        )}.`
-      )
+          timeFormat,
+        )}.`,
+      );
 
-      setUid("")
+      setUid("");
 
       if (onFilter) {
-        onFilter(dateFilter)
+        onFilter(dateFilter);
       }
     } catch (err) {
-      setError(err.message)
+      setError(err.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   async function handleCheckOut() {
     if (!uid.trim()) {
-      setError("Please enter an employee UID.")
-      setMessage("")
-      return
+      setError("Please enter an employee UID.");
+      setMessage("");
+      return;
     }
 
-    setLoading(true)
-    setError("")
-    setMessage("")
+    setLoading(true);
+    setError("");
+    setMessage("");
 
     try {
-      const data = await checkOut(uid)
+      const data = await checkOut(uid);
 
       setMessage(
         `${data.employee_name} checked out successfully at ${formatTime(
           data.check_out,
-          timeFormat
-        )}.`
-      )
+          timeFormat,
+        )}.`,
+      );
 
-      setUid("")
+      setUid("");
 
       if (onFilter) {
-        onFilter(dateFilter)
+        onFilter(dateFilter);
       }
     } catch (err) {
-      setError(err.message)
+      setError(err.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   function handleUidChange(event) {
-    setUid(event.target.value)
-    setError("")
-    setMessage("")
+    setUid(event.target.value);
+    setError("");
+    setMessage("");
   }
 
   function handleDateFilterChange(event) {
-    const value = event.target.value
-    setDateFilter(value)
+    const value = event.target.value;
+    setDateFilter(value);
 
     if (onFilter) {
-      onFilter(value)
+      onFilter(value);
     }
   }
 
@@ -173,6 +173,7 @@ function Attendance({ attendance, onFilter }) {
           <thead>
             <tr>
               <th>Date</th>
+              <th>Employee ID</th>
               <th>RFID</th>
               <th>Employee</th>
               <th>Department</th>
@@ -185,34 +186,41 @@ function Attendance({ attendance, onFilter }) {
           <tbody>
             {attendance.length === 0 ? (
               <tr>
-                <td colSpan="7" className="empty-message">
+                <td colSpan="8" className="empty-message">
                   No attendance records found.
                 </td>
               </tr>
             ) : (
-              attendance.map((record) => (
-                <tr key={record.id}>
-                  <td>{record.date}</td>
-                  <td>{record.uid}</td>
-                  <td>{record.employee_name}</td>
-                  <td>{record.department_name || "-"}</td>
-                  <td>{formatTime(record.check_in, timeFormat)}</td>
-                  <td>{formatTime(record.check_out, timeFormat)}</td>
-                  <td>
-                    {record.check_out ? (
-                      <span className="status completed">Completed</span>
-                    ) : (
-                      <span className="status pending">Checked in</span>
-                    )}
-                  </td>
-                </tr>
-              ))
+              [...attendance]
+                .sort((a, b) =>
+                  a.employee_id.localeCompare(b.employee_id, undefined, {
+                    numeric: true,
+                  }),
+                )
+                .map((record) => (
+                  <tr key={record.id}>
+                    <td>{record.date}</td>
+                    <td>{record.employee_id}</td>
+                    <td>{record.uid}</td>
+                    <td>{record.employee_name}</td>
+                    <td>{record.department_name || "-"}</td>
+                    <td>{formatTime(record.check_in, timeFormat)}</td>
+                    <td>{formatTime(record.check_out, timeFormat)}</td>
+                    <td>
+                      {record.check_out ? (
+                        <span className="status completed">Completed</span>
+                      ) : (
+                        <span className="status pending">Checked in</span>
+                      )}
+                    </td>
+                  </tr>
+                ))
             )}
           </tbody>
         </table>
       </div>
     </div>
-  )
+  );
 }
 
-export default Attendance
+export default Attendance;

@@ -222,7 +222,8 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         employees = (
             Employee.objects
             .select_related("department")
-            .order_by("name")
+            .order_by(employee_id)
+            # .order_by("name")
         )
         
         if employee_id:
@@ -568,6 +569,11 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 )
 
                 current_date += timedelta(days=1)
+                
+        
+        daily_details.sort(
+            key=lambda row: row["employee_id"] or ""
+            )
 
         # ==================================================
         # JSON RESPONSE
